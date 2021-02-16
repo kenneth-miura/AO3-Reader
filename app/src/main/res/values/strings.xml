@@ -2,4 +2,6 @@
     <string name="app_name">AO3Reader</string>
     <string name="title_activity_download">DownloadActivity</string>
     <string name='url_toast'>URL Toast</string>
+    <string name="browse_text">Browse Archive of Our Own</string>
+    <string name="read_files_text">Read Downloaded Works</string>
 </resources>

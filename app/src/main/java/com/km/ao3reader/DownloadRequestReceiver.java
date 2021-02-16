@@ -22,7 +22,6 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
     private static final String LOG_TAG = DownloadRequestReceiver.class.getSimpleName();
     public static final int ACTION_DOWNLOAD_REQUEST = 1;
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
-    //TODO: Write a download reciever that will notify us when the download is done?
 
     //TODO: test cases
     /*

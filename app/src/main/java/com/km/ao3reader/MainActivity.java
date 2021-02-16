@@ -1,11 +1,14 @@
 package com.km.ao3reader;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.content.ContextCompat;
 
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -33,6 +36,12 @@ public class MainActivity extends AppCompatActivity {
                 PendingIntent pendingIntent = createPendingIntent(DownloadRequestReceiver.ACTION_DOWNLOAD_REQUEST);
                 CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();
                 intentBuilder.setActionButton(downloadIcon, actionLabel, pendingIntent);
+                CustomTabColorSchemeParams params = new CustomTabColorSchemeParams.Builder()
+                        .setToolbarColor(ContextCompat.getColor(context, R.color.crimson_light))
+                        .setNavigationBarColor(ContextCompat.getColor(context, R.color.crimson_light))
+                        .build();
+                intentBuilder.setColorScheme(CustomTabsIntent.COLOR_SCHEME_LIGHT);
+                intentBuilder.setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_LIGHT, params);
 
                 CustomTabsIntent customTabsIntent = intentBuilder.build();
                 customTabsIntent.launchUrl(view.getContext(), Uri.parse(url));
