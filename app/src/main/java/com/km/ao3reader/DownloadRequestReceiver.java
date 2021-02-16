@@ -1,4 +1,4 @@
-package com.main.ao3reader;
+package com.km.ao3reader;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,7 +9,6 @@ import android.widget.Toast;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -19,13 +18,19 @@ import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class DownloadBroadcastReceiver extends BroadcastReceiver {
-    private static final String LOG_TAG = DownloadBroadcastReceiver.class.getSimpleName();
-    public static final int ACTION_DOWNLOAD = 1;
-    private static String testDownloadLink = "https://archiveofourown.org/downloads/7754443/Constellations.pdf?updated_at=1605412565";
+public class DownloadRequestReceiver extends BroadcastReceiver {
+    private static final String LOG_TAG = DownloadRequestReceiver.class.getSimpleName();
+    public static final int ACTION_DOWNLOAD_REQUEST = 1;
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
     //TODO: Write a download reciever that will notify us when the download is done?
 
+    //TODO: test cases
+    /*
+    Downloading from 1st chapter
+    Downloading from entire work page
+    Failing to download if non-ao3 page
+    Failing to download if ao3 page, but non-work
+     */
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -36,11 +41,16 @@ public class DownloadBroadcastReceiver extends BroadcastReceiver {
         }
         else{
             // Need to make sure this is actually running in the case where it's not valid
-            Toast.makeText(context, "Not a valid Archive of our own Work URL", Toast.LENGTH_SHORT);
+            Log.d(LOG_TAG, "This is an invalid url");
+            Toast.makeText(context, "Not a valid Archive of our own Work URL", Toast.LENGTH_SHORT).show();
         }
     }
     private Boolean validAO3Work(String myURL){
         String[] splitResult = myURL.split("/");
+        if (splitResult.length < 6){
+            // basically, if it's length is < 6, we know it's not a valid one b/c it can't have a string "chapters" in the correct place
+           return false;
+        }
         //Checking that it's under the archiveofourown domain
         Boolean isAO3Link =  splitResult[2].equals("archiveofourown.org");
         //Checking that it is a valid work
@@ -91,9 +101,12 @@ public class DownloadBroadcastReceiver extends BroadcastReceiver {
                 String dlLink = makeDownloadLink(url);
                 //Have to parse out the name because the download link's work name gets shortened if the name is too long
                 String name = getWorkName(url);
-                Log.d(LOG_TAG, "dlLink:" + dlLink);
                 downloadPDF(dlLink, name,context);
                 Log.d(LOG_TAG, "finished running DownloadTask");
+                Intent finishedDownload = new Intent(context, DownloadCompletionReceiver.class);
+                finishedDownload.putExtra(DownloadCompletionReceiver.KEY_DOWNLOAD_SOURCE, DownloadCompletionReceiver.SOURCE_AO3);
+                finishedDownload.putExtra(DownloadCompletionReceiver.KEY_AO3_WORK_NAME, name);
+                context.sendBroadcast(finishedDownload);
             } catch (IOException e) {
                 e.printStackTrace();
             }

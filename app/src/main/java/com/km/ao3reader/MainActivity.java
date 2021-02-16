@@ -1,4 +1,4 @@
-package com.main.ao3reader;
+package com.km.ao3reader;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.browser.customtabs.CustomTabsIntent;
@@ -12,8 +12,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     public static int downloadID = 1;
@@ -31,9 +29,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view){
                 String url = "https://archiveofourown.org/works/7754443/chapters/17682043";
-                Toast.makeText(context, "RUNNING", Toast.LENGTH_SHORT);
                 String actionLabel = "Download";
-                PendingIntent pendingIntent = createPendingIntent(DownloadBroadcastReceiver.ACTION_DOWNLOAD);
+                PendingIntent pendingIntent = createPendingIntent(DownloadRequestReceiver.ACTION_DOWNLOAD_REQUEST);
                 CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();
                 intentBuilder.setActionButton(downloadIcon, actionLabel, pendingIntent);
 
@@ -51,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private PendingIntent createPendingIntent(int actionSourceId){
-        Intent actionIntent = new Intent(this.getApplicationContext(), DownloadBroadcastReceiver.class);
+        Intent actionIntent = new Intent(this.getApplicationContext(), DownloadRequestReceiver.class);
         return PendingIntent.getBroadcast(getApplicationContext(), actionSourceId, actionIntent, 0);
     }
 

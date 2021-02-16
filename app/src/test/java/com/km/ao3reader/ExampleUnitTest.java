@@ -1,4 +1,4 @@
-package com.main.ao3reader;
+package com.km.ao3reader;
 
 import org.junit.Test;
 
