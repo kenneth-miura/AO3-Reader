@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AO3Reader</string>
+    <string name="title_activity_download">DownloadActivity</string>
+    <string name='url_toast'>URL Toast</string>
 </resources>
