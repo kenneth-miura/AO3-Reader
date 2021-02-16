@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
         btnLaunch.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                String url = "https://developers.google.com/web/android/custom-tabs/";
+                String url = "https://archiveofourown.org/works/7754443/chapters/17682043";
                 Toast.makeText(context, "RUNNING", Toast.LENGTH_SHORT);
                 String actionLabel = "Download";
                 PendingIntent pendingIntent = createPendingIntent(DownloadBroadcastReceiver.ACTION_DOWNLOAD);
