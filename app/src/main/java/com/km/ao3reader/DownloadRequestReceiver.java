@@ -21,7 +21,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class DownloadRequestReceiver extends BroadcastReceiver {
     private static final String LOG_TAG = DownloadRequestReceiver.class.getSimpleName();
     public static final int ACTION_DOWNLOAD_REQUEST = 1;
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
 
     //TODO: test cases
     /*
@@ -30,6 +30,7 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
     Failing to download if non-ao3 page
     Failing to download if ao3 page, but non-work
      */
+    //TODO: Add progress bar for downloads in a notification
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -40,20 +41,19 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         }
         else{
             // Need to make sure this is actually running in the case where it's not valid
-            Log.d(LOG_TAG, "This is an invalid url");
-            Toast.makeText(context, "Not a valid Archive of our own Work URL", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "The URL:" + url + "is not a valid Archive of our own Work URL", Toast.LENGTH_SHORT).show();
         }
     }
     private Boolean validAO3Work(String myURL){
         String[] splitResult = myURL.split("/");
-        if (splitResult.length < 6){
-            // basically, if it's length is < 6, we know it's not a valid one b/c it can't have a string "chapters" in the correct place
+        if (splitResult.length < 5){
+            // basically, if it's length is < 5, we know it's not a valid one b/c it can't have the work id
            return false;
         }
         //Checking that it's under the archiveofourown domain
         Boolean isAO3Link =  splitResult[2].equals("archiveofourown.org");
         //Checking that it is a valid work
-        Boolean isWork = (splitResult[3].equals("works") && splitResult[5].equals("chapters"));
+        Boolean isWork = (splitResult[3].equals("works"));
         return isAO3Link && isWork;
     }
     private String makeDownloadLink(String myURL) throws IOException {
