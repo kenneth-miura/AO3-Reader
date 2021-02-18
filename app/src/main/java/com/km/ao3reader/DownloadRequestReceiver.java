@@ -56,9 +56,9 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         Boolean isWork = (splitResult[3].equals("works"));
         return isAO3Link && isWork;
     }
-    private String makeDownloadLink(String myURL) throws IOException {
+    private String makeDownloadLink(String myURL, Context context) throws IOException {
         Document document = Jsoup.connect(myURL).get();
-        Element link = document.select("a[href*=pdf]").first();
+        Element link = document.select(String.format("a[href*=.%s]", context.getResources().getString(R.string.work_document_type))).first();
         String relativeLink = link.attr("href");
         String dlLink = "https://archiveofourown.org" + relativeLink;
         return dlLink;
@@ -69,10 +69,15 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         return link.text();
 
     }
-    private void downloadPDF(String myURL, String workName, Context context){
+    private void downloadWork(String myURL, String workName, Context context){
 
+        //TODO: Set this up so it downloads html, splits it by chapter into separate html files all saved under one folder
+        /*
+        1. make directory for work
+        2. Split html into chapters (still html) (See if we can read the html after split)
+         */
         File path = context.getExternalFilesDir(null);
-        File writeTo = new File(path, workName +".pdf");
+        File writeTo = new File(path, String.format("%s.%s", workName, context.getResources().getString(R.string.work_document_type)));
         Log.d(LOG_TAG, writeTo.getAbsolutePath());
         try(BufferedInputStream in = new BufferedInputStream(new URL(myURL).openStream());
             FileOutputStream fileOutputStream = new FileOutputStream(writeTo)){
@@ -97,10 +102,11 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         @Override
         public void run() {
             try {
-                String dlLink = makeDownloadLink(url);
+                String dlLink = makeDownloadLink(url, context);
                 //Have to parse out the name because the download link's work name gets shortened if the name is too long
+                Log.d(LOG_TAG, "dlLink: " + dlLink);
                 String name = getWorkName(url);
-                downloadPDF(dlLink, name,context);
+                downloadWork(dlLink, name,context);
                 Log.d(LOG_TAG, "finished running DownloadTask");
                 Intent finishedDownload = new Intent(context, DownloadCompletionReceiver.class);
                 finishedDownload.putExtra(DownloadCompletionReceiver.KEY_DOWNLOAD_SOURCE, DownloadCompletionReceiver.SOURCE_AO3);

@@ -38,13 +38,13 @@ public class ViewWorksActivity extends AppCompatActivity implements WorkListAdap
     private void initDataset(){
         File directory = getExternalFilesDir(null);
         Log.d("Files", "Path: " + directory.getAbsolutePath());
-        File[] files = directory.listFiles(f -> f.getName().contains(".pdf"));
+        File[] files = directory.listFiles(f -> f.getName().contains(getString(R.string.work_document_type)));
         works = new String[files.length];
         Log.d("Files", "Size: " + files.length);
         for (int i =0; i < files.length; i++){
             File f = files[i];
             String filename = f.getName();
-            String workName =  filename.substring(0, filename.indexOf(".pdf"));
+            String workName =  filename.substring(0, filename.indexOf("." + getString(R.string.work_document_type)));
             works[i] = workName;
         }
 
@@ -52,7 +52,6 @@ public class ViewWorksActivity extends AppCompatActivity implements WorkListAdap
 
     @Override
     public void onWorkClick(String work) {
-        Toast.makeText(this, "This is a placeholder for opening " + work, Toast.LENGTH_LONG).show();
         Intent intent = new Intent(this, ReadWorkActivity.class);
         intent.putExtra(ReadWorkActivity.KEY_PDF_PATH, work);
         startActivity(intent);
