@@ -53,8 +53,8 @@ public class MainActivity extends AppCompatActivity {
                 CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();
                 intentBuilder.setActionButton(downloadIcon, actionLabel, pendingIntent);
                 CustomTabColorSchemeParams params = new CustomTabColorSchemeParams.Builder()
-                        .setToolbarColor(ContextCompat.getColor(context, R.color.crimson_light))
-                        .setNavigationBarColor(ContextCompat.getColor(context, R.color.crimson_light))
+                        .setToolbarColor(ContextCompat.getColor(context, R.color.crimson_dark))
+                        .setNavigationBarColor(ContextCompat.getColor(context, R.color.crimson_dark))
                         .build();
                 intentBuilder.setColorScheme(CustomTabsIntent.COLOR_SCHEME_LIGHT);
                 intentBuilder.setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_LIGHT, params);

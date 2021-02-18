@@ -6,7 +6,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.File;
 
@@ -38,14 +37,13 @@ public class ViewWorksActivity extends AppCompatActivity implements WorkListAdap
     private void initDataset(){
         File directory = getExternalFilesDir(null);
         Log.d("Files", "Path: " + directory.getAbsolutePath());
-        File[] files = directory.listFiles(f -> f.getName().contains(getString(R.string.work_document_type)));
-        works = new String[files.length];
-        Log.d("Files", "Size: " + files.length);
-        for (int i =0; i < files.length; i++){
-            File f = files[i];
+        File[] workDirectories = directory.listFiles(f -> f.isDirectory());
+        works = new String[workDirectories.length];
+        Log.d("Files", "Size: " + works.length);
+        for (int i =0; i < works.length; i++){
+            File f = workDirectories[i];
             String filename = f.getName();
-            String workName =  filename.substring(0, filename.indexOf("." + getString(R.string.work_document_type)));
-            works[i] = workName;
+            works[i] = filename;
         }
 
     }
@@ -53,7 +51,7 @@ public class ViewWorksActivity extends AppCompatActivity implements WorkListAdap
     @Override
     public void onWorkClick(String work) {
         Intent intent = new Intent(this, ReadWorkActivity.class);
-        intent.putExtra(ReadWorkActivity.KEY_PDF_PATH, work);
+        intent.putExtra(ReadWorkActivity.KEY_WORK_DIR_NAME, work);
         startActivity(intent);
 
     }

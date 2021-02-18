@@ -9,18 +9,18 @@ import android.widget.Toast;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class DownloadRequestReceiver extends BroadcastReceiver {
-    private static final String LOG_TAG = DownloadRequestReceiver.class.getSimpleName();
     public static final int ACTION_DOWNLOAD_REQUEST = 1;
+    private static final String LOG_TAG = DownloadRequestReceiver.class.getSimpleName();
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
 
     //TODO: test cases
@@ -35,27 +35,28 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String url = intent.getDataString();
-        if (validAO3Work(url)){
+        if (validAO3Work(url)) {
             Toast.makeText(context, "Downloading: " + url, Toast.LENGTH_LONG).show();
             executor.submit(new DownloadTask(url, context));
-        }
-        else{
+        } else {
             // Need to make sure this is actually running in the case where it's not valid
             Toast.makeText(context, "The URL:" + url + "is not a valid Archive of our own Work URL", Toast.LENGTH_SHORT).show();
         }
     }
-    private Boolean validAO3Work(String myURL){
+
+    private Boolean validAO3Work(String myURL) {
         String[] splitResult = myURL.split("/");
-        if (splitResult.length < 5){
+        if (splitResult.length < 5) {
             // basically, if it's length is < 5, we know it's not a valid one b/c it can't have the work id
-           return false;
+            return false;
         }
         //Checking that it's under the archiveofourown domain
-        Boolean isAO3Link =  splitResult[2].equals("archiveofourown.org");
+        Boolean isAO3Link = splitResult[2].equals("archiveofourown.org");
         //Checking that it is a valid work
         Boolean isWork = (splitResult[3].equals("works"));
         return isAO3Link && isWork;
     }
+
     private String makeDownloadLink(String myURL, Context context) throws IOException {
         Document document = Jsoup.connect(myURL).get();
         Element link = document.select(String.format("a[href*=.%s]", context.getResources().getString(R.string.work_document_type))).first();
@@ -63,42 +64,64 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         String dlLink = "https://archiveofourown.org" + relativeLink;
         return dlLink;
     }
+
     private String getWorkName(String myURL) throws IOException {
         Document document = Jsoup.connect(myURL).get();
         Element link = document.select(".title.heading").first();
         return link.text();
 
     }
-    private void downloadWork(String myURL, String workName, Context context){
 
-        //TODO: Set this up so it downloads html, splits it by chapter into separate html files all saved under one folder
-        /*
-        1. make directory for work
-        2. Split html into chapters (still html) (See if we can read the html after split)
-         */
-        File path = context.getExternalFilesDir(null);
-        File writeTo = new File(path, String.format("%s.%s", workName, context.getResources().getString(R.string.work_document_type)));
-        Log.d(LOG_TAG, writeTo.getAbsolutePath());
-        try(BufferedInputStream in = new BufferedInputStream(new URL(myURL).openStream());
-            FileOutputStream fileOutputStream = new FileOutputStream(writeTo)){
-            byte dataBuffer[] = new byte[1024];
-            int bytesRead;
-            while ((bytesRead= in.read(dataBuffer, 0, 1024))!= -1){
-                fileOutputStream.write(dataBuffer, 0, bytesRead);
+    private void downloadAsChapters(String dlURL, File writeDirectory, String workDocumentType) throws IOException {
+        Document document = Jsoup.connect(dlURL).get();
+        Elements chapterTexts = document.select("div.userstuff:not(#chapters)");
+        Elements chapterHeadings = document.select("div > h2.heading");
+        Log.i("CHAPTER DOWNLOADS", String.format("num of texts: %d, num of headings: %d", chapterTexts.size(), chapterHeadings.size()));
+        if (chapterHeadings.size() == chapterTexts.size()) {
+            for (int i=0; i < chapterTexts.size(); i++) {
+                File writeTo = new File(String.format("%s/Chapter %d.%s", writeDirectory.getAbsolutePath(), i+1, workDocumentType));
+                Log.i("CHAPTER DOWNLOADS", writeTo.getAbsolutePath());
+                BufferedWriter writer = new BufferedWriter(new FileWriter(writeTo));
+                writer.write(chapterHeadings.get(i).html());
+                writer.write(chapterTexts.get(i).html());
+                writer.close();
             }
+        } else {
+            Log.i("CHAPTER_DOWNLOADS", "sizes don't match up");
         }
-        catch( IOException e ){
-            Log.e(LOG_TAG, e.getMessage());
+
+
+    }
+
+    private void downloadWork(String myURL, String workName, Context context) {
+        File path = context.getExternalFilesDir(null);
+        File workDirectory = new File(path.getAbsolutePath() + '/' + workName);
+        if (!workDirectory.exists() && !workDirectory.isDirectory()) {
+            if (workDirectory.mkdir()) {
+                Log.i("CreateDir", "App dir created");
+            } else {
+                Log.w("CreateDir", "Unable to create app dir");
+            }
+        } else {
+            Log.i("CreateDir", "App dir already exists");
+        }
+
+        try {
+            downloadAsChapters(myURL, workDirectory, context.getResources().getString(R.string.work_document_type));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
     private class DownloadTask implements Runnable {
         private String url;
         private Context context;
 
-        public DownloadTask(String url,Context context){
+        public DownloadTask(String url, Context context) {
             this.url = url;
             this.context = context;
         }
+
         @Override
         public void run() {
             try {
@@ -106,7 +129,7 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
                 //Have to parse out the name because the download link's work name gets shortened if the name is too long
                 Log.d(LOG_TAG, "dlLink: " + dlLink);
                 String name = getWorkName(url);
-                downloadWork(dlLink, name,context);
+                downloadWork(dlLink, name, context);
                 Log.d(LOG_TAG, "finished running DownloadTask");
                 Intent finishedDownload = new Intent(context, DownloadCompletionReceiver.class);
                 finishedDownload.putExtra(DownloadCompletionReceiver.KEY_DOWNLOAD_SOURCE, DownloadCompletionReceiver.SOURCE_AO3);
