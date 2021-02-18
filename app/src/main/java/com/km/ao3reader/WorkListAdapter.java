@@ -1,7 +1,6 @@
 package com.km.ao3reader;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +11,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class WorkListAdapter extends RecyclerView.Adapter<WorkListAdapter.WorkViewHolder> {
     //TODO: add a progress bar for how far you are in the PDF or smth
-    private final String[] works;
+    private final Work[] works;
     private final LayoutInflater inflater;
     private OnWorkListener onWorkListener;
 
-    public WorkListAdapter(Context context, String[] works, OnWorkListener onWorkListener) {
+    public WorkListAdapter(Context context, Work[] works, OnWorkListener onWorkListener) {
         inflater = LayoutInflater.from(context);
         this.works = works;
         this.onWorkListener = onWorkListener;
@@ -31,7 +30,7 @@ public class WorkListAdapter extends RecyclerView.Adapter<WorkListAdapter.WorkVi
 
     @Override
     public void onBindViewHolder(@NonNull WorkViewHolder holder, int position) {
-        String current = works[position];
+        String current = works[position].getWorkName();
         holder.titleView.setText(current);
 
     }
@@ -39,6 +38,10 @@ public class WorkListAdapter extends RecyclerView.Adapter<WorkListAdapter.WorkVi
     @Override
     public int getItemCount() {
         return works.length;
+    }
+
+    public interface OnWorkListener {
+        void onWorkClick(Work work);
     }
 
     class WorkViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -58,15 +61,11 @@ public class WorkListAdapter extends RecyclerView.Adapter<WorkListAdapter.WorkVi
         @Override
         public void onClick(View v) {
             int position = getLayoutPosition();
-            String work = works[position];
-            onWorkListener.onWorkClick(work);
+            onWorkListener.onWorkClick(works[position]);
             //line below is for if we mutate the list. Don't think we will
             adapter.notifyDataSetChanged();
 
         }
 
-    }
-    public interface OnWorkListener{
-        void onWorkClick(String work);
     }
 }

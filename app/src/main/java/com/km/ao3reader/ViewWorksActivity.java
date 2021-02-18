@@ -1,29 +1,25 @@
 package com.km.ao3reader;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.io.File;
 
-public class ViewWorksActivity extends AppCompatActivity implements WorkListAdapter.OnWorkListener{
-    public static final String KEY_WORKS_LIST= "com.km.ao3.WORKS_LIST";
+public class ViewWorksActivity extends AppCompatActivity implements WorkListAdapter.OnWorkListener {
     public static final String LOG_TAG = ViewWorksActivity.class.getSimpleName();
     private RecyclerView recyclerView;
     private WorkListAdapter adapter;
-    private String[] works;
+    private Work[] works;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_works);
         initDataset();
-        for (String s: works){
-            Log.d(LOG_TAG, s);
-        }
 
 
         //Setting up recycler view stuff
@@ -34,24 +30,26 @@ public class ViewWorksActivity extends AppCompatActivity implements WorkListAdap
 
     }
 
-    private void initDataset(){
+    private void initDataset() {
         File directory = getExternalFilesDir(null);
         Log.d("Files", "Path: " + directory.getAbsolutePath());
         File[] workDirectories = directory.listFiles(f -> f.isDirectory());
-        works = new String[workDirectories.length];
+        works = new Work[workDirectories.length];
         Log.d("Files", "Size: " + works.length);
-        for (int i =0; i < works.length; i++){
+        for (int i = 0; i < works.length; i++) {
             File f = workDirectories[i];
             String filename = f.getName();
-            works[i] = filename;
+            int numOfChapters = f.listFiles().length;
+            works[i] = new Work(filename, numOfChapters);
         }
 
     }
 
     @Override
-    public void onWorkClick(String work) {
+    public void onWorkClick(Work work) {
         Intent intent = new Intent(this, ReadWorkActivity.class);
-        intent.putExtra(ReadWorkActivity.KEY_WORK_DIR_NAME, work);
+        intent.putExtra(ReadWorkActivity.KEY_WORK_DIR_NAME, work.getWorkName());
+        intent.putExtra(ReadWorkActivity.KEY_NUM_OF_CHAPTERS, work.getNumOfChapters());
         startActivity(intent);
 
     }

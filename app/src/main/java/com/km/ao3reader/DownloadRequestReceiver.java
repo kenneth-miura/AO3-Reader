@@ -35,16 +35,20 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String url = intent.getDataString();
-        if (validAO3Work(url)) {
+        if (isValidAO3OneChapter(url)) {
+            Toast.makeText(context, "Downloading oneshot: " + url, Toast.LENGTH_LONG).show();
+            executor.submit(new DownloadTask(url, context, true));
+
+        } else if (isValidAO3Work(url)) {
             Toast.makeText(context, "Downloading: " + url, Toast.LENGTH_LONG).show();
-            executor.submit(new DownloadTask(url, context));
+            executor.submit(new DownloadTask(url, context, false));
         } else {
             // Need to make sure this is actually running in the case where it's not valid
             Toast.makeText(context, "The URL:" + url + "is not a valid Archive of our own Work URL", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private Boolean validAO3Work(String myURL) {
+    private boolean isValidAO3Work(String myURL) {
         String[] splitResult = myURL.split("/");
         if (splitResult.length < 5) {
             // basically, if it's length is < 5, we know it's not a valid one b/c it can't have the work id
@@ -55,6 +59,12 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         //Checking that it is a valid work
         Boolean isWork = (splitResult[3].equals("works"));
         return isAO3Link && isWork;
+    }
+
+    private boolean isValidAO3OneChapter(String url) {
+        return isValidAO3Work(url) && !url.contains("chapters");
+
+
     }
 
     private String makeDownloadLink(String myURL, Context context) throws IOException {
@@ -78,9 +88,8 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         Elements chapterHeadings = document.select("div > h2.heading");
         Log.i("CHAPTER DOWNLOADS", String.format("num of texts: %d, num of headings: %d", chapterTexts.size(), chapterHeadings.size()));
         if (chapterHeadings.size() == chapterTexts.size()) {
-            for (int i=0; i < chapterTexts.size(); i++) {
-                File writeTo = new File(String.format("%s/Chapter %d.%s", writeDirectory.getAbsolutePath(), i+1, workDocumentType));
-                Log.i("CHAPTER DOWNLOADS", writeTo.getAbsolutePath());
+            for (int i = 0; i < chapterTexts.size(); i++) {
+                File writeTo = new File(String.format("%s/Chapter %d.%s", writeDirectory.getAbsolutePath(), i + 1, workDocumentType));
                 BufferedWriter writer = new BufferedWriter(new FileWriter(writeTo));
                 writer.write(chapterHeadings.get(i).html());
                 writer.write(chapterTexts.get(i).html());
@@ -89,11 +98,21 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         } else {
             Log.i("CHAPTER_DOWNLOADS", "sizes don't match up");
         }
+    }
+
+    private void downloadOneChapterWork(String dlURL, File writeDirectory, String workDocumentType) throws IOException {
+        Document document = Jsoup.connect(dlURL).get();
+        Element chapter = document.select("div.userstuff").first();
+        File writeTo = new File(String.format("%s/Chapter 1.%s", writeDirectory.getAbsolutePath(), workDocumentType));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(writeTo));
+        writer.write(chapter.html());
+        writer.close();
 
 
     }
 
-    private void downloadWork(String myURL, String workName, Context context) {
+    private void downloadWork(String myURL, String workName, Context context, boolean isOneChapter) {
+        //TODO: put metadata (author, tags, rating, etc) in metadata in dir? if that's possible. If not, put it in a text file in the directory
         File path = context.getExternalFilesDir(null);
         File workDirectory = new File(path.getAbsolutePath() + '/' + workName);
         if (!workDirectory.exists() && !workDirectory.isDirectory()) {
@@ -107,7 +126,11 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
         }
 
         try {
-            downloadAsChapters(myURL, workDirectory, context.getResources().getString(R.string.work_document_type));
+            if (isOneChapter) {
+                downloadOneChapterWork(myURL, workDirectory, context.getResources().getString(R.string.work_document_type));
+            } else {
+                downloadAsChapters(myURL, workDirectory, context.getResources().getString(R.string.work_document_type));
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -116,10 +139,12 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
     private class DownloadTask implements Runnable {
         private String url;
         private Context context;
+        private boolean isOneChapter;
 
-        public DownloadTask(String url, Context context) {
+        public DownloadTask(String url, Context context, boolean isOneChapter) {
             this.url = url;
             this.context = context;
+            this.isOneChapter = isOneChapter;
         }
 
         @Override
@@ -129,7 +154,7 @@ public class DownloadRequestReceiver extends BroadcastReceiver {
                 //Have to parse out the name because the download link's work name gets shortened if the name is too long
                 Log.d(LOG_TAG, "dlLink: " + dlLink);
                 String name = getWorkName(url);
-                downloadWork(dlLink, name, context);
+                downloadWork(dlLink, name, context, isOneChapter);
                 Log.d(LOG_TAG, "finished running DownloadTask");
                 Intent finishedDownload = new Intent(context, DownloadCompletionReceiver.class);
                 finishedDownload.putExtra(DownloadCompletionReceiver.KEY_DOWNLOAD_SOURCE, DownloadCompletionReceiver.SOURCE_AO3);

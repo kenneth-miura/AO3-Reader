@@ -10,4 +10,5 @@
     <color name="crimson_900">#990000</color>
     <color name="crimson_light">#d1432b</color>
     <color name="crimson_dark">#650000</color>
+    <color name="gray">#808080</color>
 </resources>
